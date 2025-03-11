@@ -13,6 +13,7 @@ BLUE = (0, 0, 255)
 BALL_SPEED = 4
 PADDLE_SPEED = 7
 FONT = pygame.font.Font(None, 36)
+LARGE_FONT = pygame.font.Font(None, 72)
 
 # Création de la fenêtre
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -55,8 +56,8 @@ class Ball(pygame.sprite.Sprite):
 
         # Vérifier si la balle est tombée
         if self.rect.bottom >= HEIGHT:
-            self.rect.center = (WIDTH // 2, HEIGHT // 2)
-            self.vy = -BALL_SPEED
+            global game_over
+            game_over = True
 
 # Classe pour les briques
 class Brick(pygame.sprite.Sprite):
@@ -66,24 +67,40 @@ class Brick(pygame.sprite.Sprite):
         self.image.fill(RED)
         self.rect = self.image.get_rect(topleft=(x, y))
 
-# Création des objets
-paddle = Paddle()
-ball = Ball()
-bricks = pygame.sprite.Group()
-
-for i in range(8):
-    for j in range(5):
-        brick = Brick(i * 100, j * 30)
-        bricks.add(brick)
-
-all_sprites = pygame.sprite.Group(paddle, ball, *bricks)
-
-# Score
-score = 0
-
+# Fonction pour dessiner le score
 def draw_score():
     score_text = FONT.render(f"Score: {score}", True, WHITE)
-    screen.blit(score_text, (10, HEIGHT - 40))
+    # Afficher le score en bas à gauche
+    screen.blit(score_text, (10, HEIGHT - 30))
+
+# Fonction pour afficher l'écran de fin de jeu
+def game_over_screen():
+    screen.fill(BLACK)
+    game_over_text = LARGE_FONT.render("Game Over", True, WHITE)
+    score_text = FONT.render(f"Final Score: {score}", True, WHITE)
+    restart_text = FONT.render("Press R to Restart", True, WHITE)
+    screen.blit(game_over_text, (WIDTH // 2 - 150, HEIGHT // 2 - 100))
+    screen.blit(score_text, (WIDTH // 2 - 100, HEIGHT // 2))
+    screen.blit(restart_text, (WIDTH // 2 - 120, HEIGHT // 2 + 50))
+    pygame.display.flip()
+
+# Fonction pour redémarrer le jeu
+def reset_game():
+    global all_sprites, paddle, ball, bricks, score, game_over
+    paddle = Paddle()
+    ball = Ball()
+    bricks = pygame.sprite.Group()
+    for i in range(8):
+        for j in range(5):
+            brick = Brick(i * 100, j * 30)
+            bricks.add(brick)
+    all_sprites = pygame.sprite.Group(paddle, ball, *bricks)
+    score = 0
+    game_over = False
+
+# Initialisation des objets et variables
+game_over = False
+reset_game()
 
 # Boucle de jeu
 running = True
@@ -94,23 +111,28 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+        if game_over and event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+            reset_game()
 
-    all_sprites.update()
-    
-    # Collision balle/raquette
-    if pygame.sprite.collide_rect(ball, paddle):
-        ball.vy *= -1
-    
-    # Collision balle/briques
-    hit_bricks = pygame.sprite.spritecollide(ball, bricks, True)
-    if hit_bricks:
-        ball.vy *= -1
-        score += len(hit_bricks) * 10  # 10 points par brique détruite
-    
-    # Dessiner tout
-    screen.fill(BLACK)
-    all_sprites.draw(screen)
-    draw_score()
-    pygame.display.flip()
+    if not game_over:
+        all_sprites.update()
+        
+        # Collision balle/raquette
+        if pygame.sprite.collide_rect(ball, paddle):
+            ball.vy *= -1
+        
+        # Collision balle/briques
+        hit_bricks = pygame.sprite.spritecollide(ball, bricks, True)
+        if hit_bricks:
+            ball.vy *= -1
+            score += len(hit_bricks) * 10  # 10 points par brique détruite
+        
+        # Dessiner tout
+        screen.fill(BLACK)
+        all_sprites.draw(screen)
+        draw_score()
+        pygame.display.flip()
+    else:
+        game_over_screen()
 
 pygame.quit()
