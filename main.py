@@ -12,6 +12,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 BALL_SPEED = 4
 PADDLE_SPEED = 7
+FONT = pygame.font.Font(None, 36)
 
 # Création de la fenêtre
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -77,6 +78,13 @@ for i in range(8):
 
 all_sprites = pygame.sprite.Group(paddle, ball, *bricks)
 
+# Score
+score = 0
+
+def draw_score():
+    score_text = FONT.render(f"Score: {score}", True, WHITE)
+    screen.blit(score_text, (10, HEIGHT - 40))
+
 # Boucle de jeu
 running = True
 clock = pygame.time.Clock()
@@ -97,10 +105,12 @@ while running:
     hit_bricks = pygame.sprite.spritecollide(ball, bricks, True)
     if hit_bricks:
         ball.vy *= -1
+        score += len(hit_bricks) * 10  # 10 points par brique détruite
     
     # Dessiner tout
     screen.fill(BLACK)
     all_sprites.draw(screen)
+    draw_score()
     pygame.display.flip()
 
 pygame.quit()
